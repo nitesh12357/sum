@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ultimate Calculator</title>
+
+<style>
+:root {
+    --bg:#0f172a; --panel:#1e293b; --btn:#334155;
+    --text:#fff; --accent:#00ff88;
+}
+.light {
+    --bg:#f1f5f9; --panel:#fff; --btn:#e2e8f0; --text:#0f172a;
+}
+
+body {
+    margin:0; height:100vh; background:var(--bg);
+    display:flex; justify-content:center; align-items:center;
+    font-family:Segoe UI, sans-serif;
+}
+
+.app {
+    display:flex; gap:15px;
+}
+
+.calculator {
+    width:340px; background:var(--panel);
+    border-radius:20px; padding:20px;
+    box-shadow:0 20px 40px rgba(0,0,0,.4);
+}
+
+.history {
+    width:220px;
+    background:var(--panel);
+    border-radius:20px;
+    padding:15px;
+    color:var(--text);
+    display:flex;
+    flex-direction:column;
+}
+
+.history h3 {
+    margin:0 0 10px;
+    text-align:center;
+}
+
+.history-list {
+    flex:1;
+    overflow-y:auto;
+    font-size:14px;
+}
+
+.history-list div {
+    padding:6px;
+    border-bottom:1px solid rgba(255,255,255,.1);
+    cursor:pointer;
+}
+.history-list div:hover {
+    background:rgba(0,255,136,.15);
+}
+
+.header {
+    display:flex; justify-content:space-between;
+    color:var(--text); margin-bottom:10px;
+}
+
+.display {
+    background:black; color:var(--accent);
+    font-size:2.2em; padding:15px;
+    border-radius:12px; text-align:right;
+    margin-bottom:15px;
+}
+
+.buttons {
+    display:grid; grid-template-columns:repeat(4,1fr);
+    gap:10px;
+}
+
+button {
+    padding:15px; border-radius:12px;
+    border:none; background:var(--btn);
+    color:var(--text); font-size:1.2em;
+    cursor:pointer;
+}
+
+button:hover { box-shadow:0 0 10px var(--accent); }
+.operator { background:#ff6b6b; }
+.equals {
+    grid-column:span 2;
+    background:linear-gradient(135deg,#00ff88,#00cc6a);
+    color:black; font-weight:bold;
+}
+.clear-history {
+    margin-top:10px;
+    background:#ff4757;
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+    <!-- Calculator -->
+    <div class="calculator">
+        <div class="header">
+            <span>Scientific</span>
+            <button onclick="toggleTheme()">🌙</button>
+        </div>
+
+        <div class="display" id="display">0</div>
+
+        <div class="buttons">
+            <button onclick="clearAll()">C</button>
+            <button onclick="del()">⌫</button>
+            <button onclick="calcFunc('sqrt')">√</button>
+            <button class="operator" onclick="setOp('/')">÷</button>
+
+            <button onclick="calcFunc('sin')">sin</button>
+            <button onclick="calcFunc('cos')">cos</button>
+            <button onclick="calcFunc('tan')">tan</button>
+            <button class="operator" onclick="setOp('*')">×</button>
+
+            <button onclick="num('7')">7</button>
+            <button onclick="num('8')">8</button>
+            <button onclick="num('9')">9</button>
+            <button class="operator" onclick="setOp('-')">−</button>
+
+            <button onclick="num('4')">4</button>
+            <button onclick="num('5')">5</button>
+            <button onclick="num('6')">6</button>
+            <button class="operator" onclick="setOp('+')">+</button>
+
+            <button onclick="num('1')">1</button>
+            <button onclick="num('2')">2</button>
+            <button onclick="num('3')">3</button>
+            <button class="equals" onclick="equal()">=</button>
+
+            <button onclick="num('0')" style="grid-column:span 2;">0</button>
+            <button onclick="dot()">.</button>
+        </div>
+    </div>
+
+    <!-- History Panel -->
+    <div class="history">
+        <h3>History</h3>
+        <div class="history-list" id="history"></div>
+        <button class="clear-history" onclick="clearHistory()">Clear</button>
+    </div>
+</div>
+
+<script>
+let display=document.getElementById("display");
+let historyBox=document.getElementById("history");
+let current="", prev="", op="";
+
+function update(v){ display.textContent=v||"0"; }
+function num(n){ current+=n; update(current); }
+function dot(){ if(!current.includes(".")) current+="."; update(current); }
+
+function setOp(o){
+    if(current==="") return;
+    if(prev!=="") equal();
+    op=o; prev=current; current="";
+}
+
+function equal(){
+    if(prev===""||current==="") return;
+    let a=parseFloat(prev), b=parseFloat(current), r;
+    if(op==="+") r=a+b;
+    if(op==="-") r=a-b;
+    if(op==="*") r=a*b;
+    if(op==="/") r=b===0?"Error":a/b;
+
+    addHistory(`${prev} ${op} ${current} = ${r}`);
+    current=r.toString().slice(0,12);
+    prev=""; op="";
+    update(current);
+}
+
+function calcFunc(f){
+    if(current==="") return;
+    let x=parseFloat(current);
+    if(f==="sqrt") x=Math.sqrt(x);
+    if(f==="sin") x=Math.sin(x*Math.PI/180);
+    if(f==="cos") x=Math.cos(x*Math.PI/180);
+    if(f==="tan") x=Math.tan(x*Math.PI/180);
+    addHistory(`${f}(${current}) = ${x}`);
+    current=x.toString().slice(0,12);
+    update(current);
+}
+
+function addHistory(text){
+    let div=document.createElement("div");
+    div.textContent=text;
+    div.onclick=()=>{ current=text.split("=").pop().trim(); update(current); };
+    historyBox.prepend(div);
+}
+
+function clearAll(){ current=prev=op=""; update("0"); }
+function del(){ current=current.slice(0,-1); update(current); }
+function clearHistory(){ historyBox.innerHTML=""; }
+function toggleTheme(){ document.body.classList.toggle("light"); }
+</script>
+
+</body>
+</html>
+
